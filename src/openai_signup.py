@@ -34,9 +34,12 @@ def init_driver(headless=True):
     return driver
 
 def openai_signup(driver, mail_client):
+    print("🔐 Signing up for OpenAI...")
     email = mail_client.account['email']
     password = mail_client.account['password']
-
+    print(driver.current_url)
+    print(driver.page_source)
+    driver.save_screenshot("screenshot.png")
     driver.get('https://auth.openai.com/signup')
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'email'))).send_keys(email)
     driver.find_element(By.XPATH, "//button[contains(text(), 'Continue')]").click()
