@@ -7,18 +7,28 @@ from src.mailtm_client import MailTMClient
 import time
 import re
 import tempfile
+import os
 
 def init_driver(headless=True):
     options = Options()
-    if headless:
-        options.add_argument("--headless=new")
+
+    # ✅ Always enable headless mode for CI (GitHub Actions)
+    options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # ✅ FIX: use temporary unique user-data-dir for GitHub Actions
-    temp_profile = tempfile.mkdtemp()
-    options.add_argument(f"--user-data-dir={temp_profile}")
+    # ✅ Use a unique temporary user data directory
+    user_data_dir = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={user_data_dir}")
+
+    # ✅ Avoid using extensions and background network calls
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-default-apps")
+    options.add_argument("--disable-sync")
+    options.add_argument("--metrics-recording-only")
+    options.add_argument("--disable-notifications")
 
     driver = webdriver.Chrome(options=options)
     return driver

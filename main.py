@@ -7,7 +7,7 @@ from src.upload_to_drive import upload_to_drive_via_webapp
 
 def main():
     mail_client = MailTMClient()
-    driver = init_driver(headless=False)
+    driver = init_driver()
 
     print("🔐 Signing up for OpenAI...")
     openai_signup(driver, mail_client)
