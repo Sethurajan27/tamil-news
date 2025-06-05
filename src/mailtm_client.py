@@ -1,67 +1,57 @@
-import os
-import time
-import string
-import random
 import requests
-import urllib3
-
-# Disable HTTPS warnings (you may remove in production)
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class MailTMClient:
     BASE_URL = "https://api.mail.tm"
 
     def __init__(self):
-        self.session = requests.Session()
-        self.token = None
-        self.address = None
-        self.password = None
-        self.create_account()
+        self.domain = self.get_domain()
+        self.account = self.create_account()
+        self.token = self.get_token()
+
+    def get_domain(self):
+        response = requests.get(f"{self.BASE_URL}/domains")
+        data = response.json()
+        domain = data["hydra:member"][0]["domain"]
+        print(f"📥 Domain response: {data}")
+        return domain
 
     def create_account(self):
-        # Step 1: Get domain
-        domain_resp = self.session.get(f"{self.BASE_URL}/domains", verify=False)
-        domain_data = domain_resp.json()
-        print("📥 Domain response:", domain_data)
+        from uuid import uuid4
+        self.email = f"news_{uuid4().hex[:8]}@{self.domain}"
+        self.password = "Password@123"
 
-        domain = domain_data['hydra:member'][0]['domain']
+        response = requests.post(f"{self.BASE_URL}/accounts", json={
+            "address": self.email,
+            "password": self.password
+        })
+        print(f"📤 Account creation response: {response.status_code} {response.text}")
+        return {
+            "email": self.email,
+            "password": self.password,
+            "id": response.json()["id"]
+        }
 
-        # Step 2: Generate email and password
-        self.address = f"news_{os.urandom(4).hex()}@{domain}"
-        self.password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    def get_token(self):
+        response = requests.post(f"{self.BASE_URL}/token", json={
+            "address": self.account["email"],
+            "password": self.account["password"]
+        })
+        data = response.json()
+        print(f"🔐 Token response: {response.status_code} {response.text}")
+        return data["token"]
 
-        # Step 3: Create account
-        acc_data = {"address": self.address, "password": self.password}
-        acc_resp = self.session.post(f"{self.BASE_URL}/accounts", json=acc_data, verify=False)
-        print("📤 Account creation response:", acc_resp.status_code, acc_resp.text)
+    def get_messages(self):
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = requests.get(f"{self.BASE_URL}/messages", headers=headers)
+        return response.json()
 
-        if acc_resp.status_code != 201:
-            raise Exception(f"❌ Account creation failed: {acc_resp.text}")
-
-        # Step 4: Get token
-        token_resp = self.session.post(f"{self.BASE_URL}/token", json=acc_data, verify=False)
-        print("🔐 Token response:", token_resp.status_code, token_resp.text)
-
-        if token_resp.status_code != 200:
-            raise Exception(f"❌ Token fetch failed: {token_resp.text}")
-
-        self.token = token_resp.json()["token"]
-        self.session.headers.update({"Authorization": f"Bearer {self.token}"})
-        print(f"✅ Account ready: {self.address}")
-
-    def wait_for_email(self, subject_filter, timeout=300):
+    def wait_for_email(self, subject_keyword, timeout=60):
+        import time
         start = time.time()
         while time.time() - start < timeout:
-            inbox_resp = self.session.get(f"{self.BASE_URL}/messages", verify=False)
-            inbox = inbox_resp.json()
-            print("📬 Inbox check:", inbox)
-
-            for msg in inbox.get('hydra:member', []):
-                if subject_filter in msg['subject']:
-                    msg_id = msg['id']
-                    message = self.session.get(f"{self.BASE_URL}/messages/{msg_id}", verify=False).json()
-                    print("📧 Email received:", message['subject'])
-                    return message['text']
-
+            messages = self.get_messages()
+            for msg in messages.get("hydra:member", []):
+                if subject_keyword in msg["subject"]:
+                    return msg
             time.sleep(5)
-        raise TimeoutError("⏰ Email not received in time.")
+        raise TimeoutError(f"Timeout waiting for email with subject '{subject_keyword}'")
