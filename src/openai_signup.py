@@ -6,11 +6,20 @@ from selenium.webdriver.support import expected_conditions as EC
 from src.mailtm_client import MailTMClient
 import time
 import re
+import tempfile
 
 def init_driver(headless=True):
     options = Options()
     if headless:
-        options.add_argument('--headless')
+        options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    # ✅ FIX: use temporary unique user-data-dir for GitHub Actions
+    temp_profile = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={temp_profile}")
+
     driver = webdriver.Chrome(options=options)
     return driver
 
