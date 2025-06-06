@@ -27,8 +27,11 @@ def automate_openai_signup():
         print("📨 Waiting for email verification step...")
         page.wait_for_url("**/email-verification")
 
-        print("🕒 Waiting for user to manually enter the verification code from email...")
-        page.pause()  # Pause so user can enter the OTP manually
+        # print("🕒 Waiting for user to manually enter the verification code from email...")
+        # page.pause()  # Pause so user can enter the OTP manually
+        # page.pause()  # Not supported in CI
+        print("🚫 Cannot continue without OTP. Skipping this step in CI.")
+        return  # Stop script here or simulate
 
         # Step 4: About You
         print("🧍 Filling out 'About You' section...")
