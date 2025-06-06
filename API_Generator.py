@@ -3,17 +3,24 @@ from playwright.sync_api import sync_playwright
 def automate_openai_signup():
     with sync_playwright() as p:
         print("🚀 Launching browser...")
-        browser = p.chromium.launch(headless=True)  # Set to True for headless mode
+        browser = p.chromium.launch(headless=True, slow_mo=100)  # Set to True for headless mode
         context = browser.new_context()
         page = context.new_page()
 
         # Step 1: Go to signup page
         print("🔗 Navigating to OpenAI signup page...")
         page.goto("https://auth.openai.com/create-account")
-
-        print("✉️ Entering email address...")
-        page.fill('input[type="email"]', 'user@example.com')
-        page.click('button:has-text("Continue")')
+        print("⏳ Waiting for email field...")
+        try:
+            page.wait_for_selector('input[type="email"]', timeout=60000)
+            print("✉️ Entering email address...")
+            page.fill('input[type="email"]', 'user@example.com')
+            page.click('button:has-text("Continue")')
+        except Exception as e:
+            print("❌ Failed to find email field. Possibly blocked or slow page load.")
+            print(str(e))
+            browser.close()
+            return
 
         # Step 2: Enter password
         print("🔒 Waiting for password field...")
