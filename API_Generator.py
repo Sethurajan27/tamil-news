@@ -25,7 +25,7 @@ def automate_openai_signup():
 
             email = "jopogi4977@2mik.com"
             print(f"Typing email: {email}")
-            type_text_slowly(page, email_selector, email, delay=0.15)
+            type_text_slowly(page, email_selector, email, delay=0.5)
 
             print("Clicking 'Continue' button...")
             page.click('button:has-text("Continue")')
