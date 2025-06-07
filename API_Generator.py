@@ -44,7 +44,7 @@ def automate_openai_signup():
 
             password = "Password1@chatgpt"
             print("Typing password...")
-            type_text_slowly(page, password_selector, password, delay=0.15)
+            type_text_slowly(page, password_selector, password, delay=0.5)
 
             print("Clicking 'Continue' after password...")
             page.click('button:has-text("Continue")')
